@@ -46,6 +46,10 @@
       <span class="font-bold text-base tracking-tight">DevToolbox</span>
       <span class="text-xs text-slate-400 dark:text-slate-500 hidden sm:inline">— developer utilities</span>
     </div>
+    <button id="share-btn" class="flex items-center gap-1.5 px-3 py-1.5 mr-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-sm font-medium text-slate-500 dark:text-slate-400" title="Copy shareable link" onclick="shareCurrentTool()">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+      <span id="share-btn-text">Share</span>
+    </button>
     <button id="dark-toggle" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-lg" title="Toggle dark mode" onclick="toggleDark()">
       <span id="dark-icon">☀️</span>
     </button>
@@ -65,6 +69,10 @@
             <a href="#" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" data-tool="json">
               <span class="w-6 h-6 flex items-center justify-center text-[11px] bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 rounded font-bold">{}</span>
               JSON Formatter
+            </a>
+            <a href="#" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" data-tool="csv">
+              <span class="w-6 h-6 flex items-center justify-center text-[10px] bg-lime-100 dark:bg-lime-900/40 text-lime-600 dark:text-lime-400 rounded font-bold">CSV</span>
+              CSV → JSON
             </a>
             <a href="#" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" data-tool="regex">
               <span class="w-6 h-6 flex items-center justify-center text-[11px] bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 rounded font-bold">.*</span>
@@ -91,6 +99,10 @@
             <a href="#" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" data-tool="jwt">
               <span class="w-6 h-6 flex items-center justify-center text-[10px] bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 rounded font-bold">JWT</span>
               JWT Decoder
+            </a>
+            <a href="#" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" data-tool="htmlentity">
+              <span class="w-6 h-6 flex items-center justify-center text-[11px] bg-cyan-100 dark:bg-cyan-900/40 text-cyan-600 dark:text-cyan-400 rounded font-bold">&amp;</span>
+              HTML Entity
             </a>
           </div>
         </div>
@@ -119,6 +131,14 @@
             <a href="#" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" data-tool="color">
               <span class="w-6 h-6 flex items-center justify-center text-[13px] bg-pink-100 dark:bg-pink-900/40 rounded">🎨</span>
               Color
+            </a>
+            <a href="#" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" data-tool="numbase">
+              <span class="w-6 h-6 flex items-center justify-center text-[10px] bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 rounded font-bold">0x</span>
+              Number Base
+            </a>
+            <a href="#" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" data-tool="cron">
+              <span class="w-6 h-6 flex items-center justify-center text-[11px] bg-fuchsia-100 dark:bg-fuchsia-900/40 text-fuchsia-600 dark:text-fuchsia-400 rounded font-bold">⏲</span>
+              Cron Parser
             </a>
           </div>
         </div>
@@ -540,8 +560,137 @@
         </div>
       </section>
 
+      <!-- ===== CSV → JSON ===== -->
+      <section id="csv" class="tool-section">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold mb-1">CSV → JSON Converter</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Convert CSV data to JSON — first row is used as keys</p>
+        </div>
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">CSV Input</label>
+              <div class="flex items-center gap-3">
+                <label class="flex items-center gap-1.5 text-xs text-slate-500 cursor-pointer">
+                  <input type="checkbox" id="csv-pretty" checked onchange="csvConvert()"> Pretty print
+                </label>
+                <button class="text-xs text-slate-400 hover:text-red-500 transition-colors" onclick="document.getElementById('csv-input').value='';document.getElementById('csv-output').value='';hideError('csv-error')">Clear</button>
+              </div>
+            </div>
+            <textarea id="csv-input" rows="14" class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition font-mono" placeholder="name,age,city&#10;Alice,30,New York&#10;Bob,25,London" oninput="csvConvert()"></textarea>
+            <button onclick="csvSample()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm rounded-lg font-medium transition-colors">Sample</button>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">JSON Output</label>
+              <button id="csv-copy-btn" class="copy-btn text-xs text-indigo-500 hover:text-indigo-700 font-semibold transition-colors" onclick="copyOutput('csv-output','csv-copy-btn')">Copy</button>
+            </div>
+            <textarea id="csv-output" readonly rows="14" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-600 dark:text-slate-300 outline-none font-mono" placeholder="JSON will appear here..."></textarea>
+            <div id="csv-error" class="hidden text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== HTML ENTITY ===== -->
+      <section id="htmlentity" class="tool-section">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold mb-1">HTML Entity Encoder / Decoder</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Encode special characters to HTML entities or decode them back</p>
+        </div>
+        <div class="flex gap-2 mb-5">
+          <button id="he-encode-tab" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium transition-colors" onclick="setHeMode('encode')">Encode</button>
+          <button id="he-decode-tab" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm rounded-lg font-medium transition-colors" onclick="setHeMode('decode')">Decode</button>
+        </div>
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">Input</label>
+            <textarea id="he-input" rows="10" class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition" placeholder='<h1 class="title">Hello &amp; welcome</h1>' oninput="heConvert()"></textarea>
+            <button onclick="heSample()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm rounded-lg font-medium transition-colors">Sample</button>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">Output</label>
+              <button id="he-copy-btn" class="copy-btn text-xs text-indigo-500 hover:text-indigo-700 font-semibold transition-colors" onclick="copyOutput('he-output','he-copy-btn')">Copy</button>
+            </div>
+            <textarea id="he-output" readonly rows="10" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-600 dark:text-slate-300 outline-none" placeholder="Output will appear here..."></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== NUMBER BASE CONVERTER ===== -->
+      <section id="numbase" class="tool-section">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold mb-1">Number Base Converter</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Convert numbers between decimal, binary, octal, and hexadecimal</p>
+        </div>
+        <div class="max-w-lg space-y-4">
+          <div class="space-y-1">
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Decimal</label>
+            <input id="nb-dec" type="text" class="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono focus:ring-2 focus:ring-indigo-500 outline-none transition" placeholder="e.g. 255" oninput="nbFromDec()">
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Hexadecimal</label>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-slate-400 font-mono">0x</span>
+              <input id="nb-hex" type="text" class="flex-1 px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono focus:ring-2 focus:ring-indigo-500 outline-none transition uppercase" placeholder="FF" oninput="nbFromHex()">
+              <button class="copy-btn text-xs text-indigo-500 font-semibold" onclick="copyText('nb-hex',this)">Copy</button>
+            </div>
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Binary</label>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-slate-400 font-mono">0b</span>
+              <input id="nb-bin" type="text" class="flex-1 px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono focus:ring-2 focus:ring-indigo-500 outline-none transition" placeholder="11111111" oninput="nbFromBin()">
+              <button class="copy-btn text-xs text-indigo-500 font-semibold" onclick="copyText('nb-bin',this)">Copy</button>
+            </div>
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Octal</label>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-slate-400 font-mono">0o</span>
+              <input id="nb-oct" type="text" class="flex-1 px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono focus:ring-2 focus:ring-indigo-500 outline-none transition" placeholder="377" oninput="nbFromOct()">
+              <button class="copy-btn text-xs text-indigo-500 font-semibold" onclick="copyText('nb-oct',this)">Copy</button>
+            </div>
+          </div>
+          <div id="nb-error" class="hidden text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3"></div>
+        </div>
+      </section>
+
+      <!-- ===== CRON PARSER ===== -->
+      <section id="cron" class="tool-section">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold mb-1">Cron Expression Parser</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Parse cron expressions and get a human-readable description</p>
+        </div>
+        <div class="space-y-4 max-w-2xl">
+          <div class="space-y-2">
+            <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">Cron Expression</label>
+            <div class="flex gap-2">
+              <input id="cron-input" type="text" class="flex-1 px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono focus:ring-2 focus:ring-indigo-500 outline-none transition" placeholder="* * * * *" oninput="parseCron()">
+              <button onclick="cronSample()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm rounded-lg font-medium transition-colors whitespace-nowrap">Sample</button>
+            </div>
+            <p class="text-xs text-slate-400 font-mono">minute (0-59) &nbsp; hour (0-23) &nbsp; day of month (1-31) &nbsp; month (1-12) &nbsp; day of week (0-6, Sun=0)</p>
+          </div>
+
+          <div id="cron-result" class="hidden space-y-4">
+            <div class="p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl">
+              <p class="text-sm font-medium text-indigo-700 dark:text-indigo-300" id="cron-description"></p>
+            </div>
+            <div class="grid grid-cols-5 gap-2" id="cron-fields"></div>
+            <div class="p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+              <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Next 5 run times</p>
+              <div id="cron-next" class="space-y-1"></div>
+            </div>
+          </div>
+          <div id="cron-error" class="hidden text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3"></div>
+        </div>
+      </section>
+
     </main>
   </div>
+
+  <!-- Share toast -->
+  <div id="share-toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-medium px-4 py-2 rounded-full shadow-lg z-50 pointer-events-none">Link copied!</div>
 
   <script src="app.js"></script>
 </body>

@@ -805,3 +805,356 @@ showTool = function(toolId) {
     initEmojiPicker();
   }
 };
+
+// ===========================
+// 12. CSV → JSON
+// ===========================
+function csvConvert() {
+  const raw = document.getElementById('csv-input').value.trim();
+  hideError('csv-error');
+  if (!raw) { document.getElementById('csv-output').value = ''; return; }
+  try {
+    const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length < 2) throw new Error('Need at least a header row and one data row.');
+    const headers = parseCSVLine(lines[0]);
+    const rows = lines.slice(1).map(line => {
+      const vals = parseCSVLine(line);
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = vals[i] !== undefined ? vals[i] : ''; });
+      return obj;
+    });
+    const pretty = document.getElementById('csv-pretty').checked;
+    document.getElementById('csv-output').value = JSON.stringify(rows, null, pretty ? 2 : 0);
+  } catch(e) {
+    showError('csv-error', '⛔ ' + e.message);
+    document.getElementById('csv-output').value = '';
+  }
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      if (inQ && line[i+1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (c === ',' && !inQ) {
+      result.push(cur.trim()); cur = '';
+    } else {
+      cur += c;
+    }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+function csvSample() {
+  document.getElementById('csv-input').value =
+`name,age,city,role
+Alice,30,"New York",Engineer
+Bob,25,London,Designer
+"Charlie, Jr.",35,Berlin,Manager`;
+  csvConvert();
+}
+
+// ===========================
+// 13. HTML ENTITY
+// ===========================
+let heMode = 'encode';
+
+function setHeMode(mode) {
+  heMode = mode;
+  const active = 'px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium transition-colors';
+  const inactive = 'px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm rounded-lg font-medium transition-colors';
+  document.getElementById('he-encode-tab').className = mode === 'encode' ? active : inactive;
+  document.getElementById('he-decode-tab').className = mode === 'decode' ? active : inactive;
+  document.getElementById('he-input').placeholder = mode === 'encode'
+    ? '<h1 class="title">Hello & welcome</h1>'
+    : '&lt;h1 class=&quot;title&quot;&gt;Hello &amp; welcome&lt;/h1&gt;';
+  heConvert();
+}
+
+function heConvert() {
+  const input = document.getElementById('he-input').value;
+  if (!input) { document.getElementById('he-output').value = ''; return; }
+  if (heMode === 'encode') {
+    document.getElementById('he-output').value = input
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  } else {
+    document.getElementById('he-output').value = input
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(n))
+      .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+  }
+}
+
+function heSample() {
+  if (heMode === 'encode') {
+    document.getElementById('he-input').value = '<h1 class="title">Hello & "World" — it\'s <em>alive</em>!</h1>';
+  } else {
+    document.getElementById('he-input').value = '&lt;h1 class=&quot;title&quot;&gt;Hello &amp; &quot;World&quot; &mdash; it&#39;s &lt;em&gt;alive&lt;/em&gt;!&lt;/h1&gt;';
+  }
+  heConvert();
+}
+
+// ===========================
+// 14. NUMBER BASE CONVERTER
+// ===========================
+let _nbUpdating = false;
+
+function nbUpdate(dec) {
+  if (_nbUpdating) return;
+  _nbUpdating = true;
+  hideError('nb-error');
+  if (isNaN(dec) || dec === null) {
+    ['nb-dec','nb-hex','nb-bin','nb-oct'].forEach(id => { if (document.activeElement.id !== id) document.getElementById(id).value = ''; });
+    _nbUpdating = false;
+    return;
+  }
+  const n = BigInt(Math.round(dec));
+  if (document.activeElement.id !== 'nb-dec') document.getElementById('nb-dec').value = n.toString(10);
+  if (document.activeElement.id !== 'nb-hex') document.getElementById('nb-hex').value = n.toString(16).toUpperCase();
+  if (document.activeElement.id !== 'nb-bin') document.getElementById('nb-bin').value = n.toString(2);
+  if (document.activeElement.id !== 'nb-oct') document.getElementById('nb-oct').value = n.toString(8);
+  _nbUpdating = false;
+}
+
+function nbFromDec() {
+  const v = document.getElementById('nb-dec').value.trim();
+  if (!v) { ['nb-hex','nb-bin','nb-oct'].forEach(id => document.getElementById(id).value = ''); return; }
+  const n = parseInt(v, 10);
+  if (isNaN(n)) { showError('nb-error', '⛔ Invalid decimal number'); return; }
+  nbUpdate(n);
+}
+
+function nbFromHex() {
+  const v = document.getElementById('nb-hex').value.trim();
+  if (!v) { ['nb-dec','nb-bin','nb-oct'].forEach(id => document.getElementById(id).value = ''); return; }
+  const n = parseInt(v, 16);
+  if (isNaN(n)) { showError('nb-error', '⛔ Invalid hexadecimal number'); return; }
+  nbUpdate(n);
+}
+
+function nbFromBin() {
+  const v = document.getElementById('nb-bin').value.trim();
+  if (!v) { ['nb-dec','nb-hex','nb-oct'].forEach(id => document.getElementById(id).value = ''); return; }
+  const n = parseInt(v, 2);
+  if (isNaN(n)) { showError('nb-error', '⛔ Invalid binary number'); return; }
+  nbUpdate(n);
+}
+
+function nbFromOct() {
+  const v = document.getElementById('nb-oct').value.trim();
+  if (!v) { ['nb-dec','nb-hex','nb-bin'].forEach(id => document.getElementById(id).value = ''); return; }
+  const n = parseInt(v, 8);
+  if (isNaN(n)) { showError('nb-error', '⛔ Invalid octal number'); return; }
+  nbUpdate(n);
+}
+
+// ===========================
+// 15. CRON PARSER
+// ===========================
+function parseCron() {
+  const expr = document.getElementById('cron-input').value.trim();
+  const result = document.getElementById('cron-result');
+  hideError('cron-error');
+  result.classList.add('hidden');
+  if (!expr) return;
+
+  const parts = expr.split(/\s+/);
+  if (parts.length !== 5) {
+    showError('cron-error', '⛔ Expected exactly 5 fields: minute hour day month weekday');
+    return;
+  }
+
+  try {
+    const [min, hour, dom, month, dow] = parts;
+    const desc = describeCron(min, hour, dom, month, dow);
+    document.getElementById('cron-description').textContent = desc;
+
+    const labels = ['Minute', 'Hour', 'Day', 'Month', 'Weekday'];
+    const ranges = ['0-59', '0-23', '1-31', '1-12', '0-6'];
+    document.getElementById('cron-fields').innerHTML = parts.map((p, i) =>
+      `<div class="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-center">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">${labels[i]}</p>
+        <code class="text-lg font-mono text-indigo-500">${escHtml(p)}</code>
+        <p class="text-[10px] text-slate-400 mt-1">${ranges[i]}</p>
+      </div>`
+    ).join('');
+
+    const next = nextCronRuns(parts, 5);
+    document.getElementById('cron-next').innerHTML = next.map(d =>
+      `<p class="text-sm font-mono text-slate-600 dark:text-slate-300">${d.toLocaleString()}</p>`
+    ).join('');
+
+    result.classList.remove('hidden');
+  } catch(e) {
+    showError('cron-error', '⛔ ' + e.message);
+  }
+}
+
+function describeCron(min, hour, dom, month, dow) {
+  const months = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  function fmtField(f, type) {
+    if (f === '*') return null;
+    if (f.startsWith('*/')) return `every ${f.slice(2)} ${type}s`;
+    if (f.includes('-')) {
+      const [a,b] = f.split('-');
+      if (type === 'weekday') return `${days[+a] || a}–${days[+b] || b}`;
+      if (type === 'month') return `${months[+a] || a}–${months[+b] || b}`;
+      return `${a}–${b}`;
+    }
+    if (f.includes(',')) {
+      const vals = f.split(',');
+      if (type === 'weekday') return vals.map(v => days[+v] || v).join(', ');
+      if (type === 'month') return vals.map(v => months[+v] || v).join(', ');
+      return vals.join(', ');
+    }
+    if (type === 'weekday') return days[+f] || f;
+    if (type === 'month') return months[+f] || f;
+    return f;
+  }
+
+  const minuteDesc = fmtField(min, 'minute');
+  const hourDesc = fmtField(hour, 'hour');
+  const domDesc = fmtField(dom, 'day');
+  const monthDesc = fmtField(month, 'month');
+  const dowDesc = fmtField(dow, 'weekday');
+
+  let when = '';
+  if (minuteDesc && hourDesc) when = `at ${hourDesc}:${min.padStart ? min.padStart(2,'0') : min}`;
+  else if (hourDesc) when = `at ${hourDesc}:00`;
+  else if (minuteDesc) when = `at minute ${minuteDesc} of every hour`;
+  else when = 'every minute';
+
+  let freq = '';
+  if (domDesc && monthDesc) freq = `on day ${domDesc} of ${monthDesc}`;
+  else if (domDesc) freq = `on day ${domDesc} of every month`;
+  else if (monthDesc) freq = `every day in ${monthDesc}`;
+  else if (dowDesc) freq = `on ${dowDesc}`;
+  else freq = 'every day';
+
+  return `Runs ${when}, ${freq}.`;
+}
+
+function nextCronRuns(parts, count) {
+  const [minF, hourF, domF, monthF, dowF] = parts;
+  const results = [];
+  const now = new Date();
+  const d = new Date(now);
+  d.setSeconds(0, 0);
+  d.setMinutes(d.getMinutes() + 1);
+
+  function matches(val, field) {
+    if (field === '*') return true;
+    if (field.startsWith('*/')) return val % parseInt(field.slice(2)) === 0;
+    return field.split(',').some(part => {
+      if (part.includes('-')) {
+        const [a, b] = part.split('-').map(Number);
+        return val >= a && val <= b;
+      }
+      return parseInt(part) === val;
+    });
+  }
+
+  let tries = 0;
+  while (results.length < count && tries < 500000) {
+    tries++;
+    if (
+      matches(d.getMonth() + 1, monthF) &&
+      matches(d.getDate(), domF) &&
+      matches(d.getDay(), dowF) &&
+      matches(d.getHours(), hourF) &&
+      matches(d.getMinutes(), minF)
+    ) {
+      results.push(new Date(d));
+    }
+    d.setMinutes(d.getMinutes() + 1);
+  }
+  return results;
+}
+
+function cronSample() {
+  const samples = ['0 9 * * 1-5','*/15 * * * *','0 0 1 * *','30 18 * * 5','0 */6 * * *'];
+  document.getElementById('cron-input').value = samples[Math.floor(Math.random() * samples.length)];
+  parseCron();
+}
+
+// ===========================
+// SHARE BUTTON
+// ===========================
+const SHARE_INPUTS = {
+  json:       () => document.getElementById('json-input').value,
+  base64:     () => document.getElementById('b64-input').value,
+  url:        () => document.getElementById('url-input').value,
+  jwt:        () => document.getElementById('jwt-input').value,
+  hash:       () => document.getElementById('hash-input').value,
+  regex:      () => JSON.stringify({ p: document.getElementById('regex-pattern').value, t: document.getElementById('regex-test').value }),
+  timestamp:  () => document.getElementById('ts-unix').value,
+  csv:        () => document.getElementById('csv-input').value,
+  htmlentity: () => document.getElementById('he-input').value,
+  numbase:    () => document.getElementById('nb-dec').value,
+  cron:       () => document.getElementById('cron-input').value,
+};
+
+const SHARE_RESTORE = {
+  json:       v => { document.getElementById('json-input').value = v; jsonFormat(); },
+  base64:     v => { document.getElementById('b64-input').value = v; b64Convert(); },
+  url:        v => { document.getElementById('url-input').value = v; urlConvert(); },
+  jwt:        v => { document.getElementById('jwt-input').value = v; jwtDecode(); },
+  hash:       v => { document.getElementById('hash-input').value = v; autoHash(); },
+  regex:      v => { try { const o = JSON.parse(v); document.getElementById('regex-pattern').value = o.p; document.getElementById('regex-test').value = o.t; runRegex(); } catch{} },
+  timestamp:  v => { document.getElementById('ts-unix').value = v; unixToDate(); },
+  csv:        v => { document.getElementById('csv-input').value = v; csvConvert(); },
+  htmlentity: v => { document.getElementById('he-input').value = v; heConvert(); },
+  numbase:    v => { document.getElementById('nb-dec').value = v; nbFromDec(); },
+  cron:       v => { document.getElementById('cron-input').value = v; parseCron(); },
+};
+
+function shareCurrentTool() {
+  const active = document.querySelector('.tool-section.active');
+  if (!active) return;
+  const toolId = active.id;
+  const getInput = SHARE_INPUTS[toolId];
+  const input = getInput ? getInput() : '';
+  const encoded = input ? btoa(new TextEncoder().encode(input).reduce((s, b) => s + String.fromCharCode(b), '')) : '';
+  const url = location.origin + location.pathname + '#' + toolId + (encoded ? ':' + encoded : '');
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('share-btn-text');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Share', 2000);
+    const toast = document.getElementById('share-toast');
+    toast.classList.remove('hidden');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => toast.classList.add('hidden'), 2000);
+  });
+}
+
+// Restore from URL hash on load
+(function restoreFromHash() {
+  const hash = location.hash.slice(1);
+  if (!hash) return;
+  const colonIdx = hash.indexOf(':');
+  const toolId = colonIdx === -1 ? hash : hash.slice(0, colonIdx);
+  const encoded = colonIdx === -1 ? '' : hash.slice(colonIdx + 1);
+  if (!document.getElementById(toolId)) return;
+  showTool(toolId);
+  if (encoded && SHARE_RESTORE[toolId]) {
+    try {
+      const bytes = Uint8Array.from(atob(encoded), c => c.charCodeAt(0));
+      const val = new TextDecoder().decode(bytes);
+      SHARE_RESTORE[toolId](val);
+    } catch {}
+  }
+})();
