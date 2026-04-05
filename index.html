@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DevToolbox</title>
+  <script>
+    if (localStorage.getItem('theme') === 'light') {
+      document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.add('dark');
+    }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <style>
+    .tool-section { display: none; }
+    .tool-section.active { display: block; }
+    .nav-link.active {
+      background-color: rgb(99 102 241 / 0.15);
+      color: rgb(129 140 248);
+    }
+    textarea, pre, code { font-family: 'Courier New', Courier, monospace; }
+    textarea { resize: vertical; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+    .match-highlight { background: rgba(234,179,8,0.3); border-radius: 2px; border-bottom: 2px solid #eab308; }
+    .copy-btn.copied { color: #22c55e !important; }
+    input[type="color"] { -webkit-appearance: none; padding: 0; border: none; cursor: pointer; }
+    input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    input[type="color"]::-webkit-color-swatch { border: none; border-radius: 6px; }
+  </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen transition-colors duration-150">
+
+  <!-- HEADER -->
+  <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 h-14 flex items-center px-4 sticky top-0 z-50 shadow-sm">
+    <button id="sidebar-toggle" class="lg:hidden mr-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onclick="toggleSidebar()">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
+    <div class="flex items-center gap-2 flex-1">
+      <span class="text-xl">🛠️</span>
+      <span class="font-bold text-base tracking-tight">DevToolbox</span>
+      <span class="text-xs text-slate-400 dark:text-slate-500 hidden sm:inline">— developer utilities</span>
+    </div>
+    <button id="dark-toggle" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-lg" title="Toggle dark mode" onclick="toggleDark()">
+      <span id="dark-icon">☀️</span>
+    </button>
+  </header>
+
+  <div class="flex">
+    <!-- SIDEBAR OVERLAY (mobile) -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 lg:hidden hidden" onclick="closeSidebar()"></div>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="fixed lg:sticky top-14 left-0 w-60 h-[calc(100vh-3.5rem)] overflow-y-auto z-50 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 flex-shrink-0">
+      <nav class="p-3 space-y-5 pb-8">
+
+        <div>
+          <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 px-3 mb-1.5">Text &amp; Data</p>
+          <div class="space-y-0.5">
+            <a href="#" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" data-tool="json">
+              <span class="w-6 h-6 flex items-center justify-center text-[11px] bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 rounded font-bold">{}</span>
+              JSON Formatter
+            </a>
+            <a href="#" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" data-tool="regex">
+              <span class="w-6 h-6 flex items-center justify-center text-[11px] bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 rounded font-bold">.*</span>
+              Regex Tester
+            </a>
+            <a href="#" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" data-tool="lorem">
+              <span class="w-6 h-6 flex items-center justify-center text-[11px] bg-teal-100 dark:bg-teal-900/40 text-teal-600 dark:text-teal-400 rounded font-bold">Aa</span>
+              Lorem Ipsum
+            </a>
+          </div>
+        </div>
+
+        <div>
+          <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 px-3 mb-1.5">Encoding</p>
+          <div class="space-y-0.5">
+            <a href="#" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" data-tool="base64">
+              <span class="w-6 h-6 flex items-center justify-center text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded font-bold">B64</span>
+              Base64
+            </a>
+            <a href="#" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" data-tool="url">
+              <span class="w-6 h-6 flex items-center justify-center text-[11px] bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-400 rounded font-bold">%</span>
+              URL Encoder
+            </a>
+            <a href="#" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" data-tool="jwt">
+              <span class="w-6 h-6 flex items-center justify-center text-[10px] bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 rounded font-bold">JWT</span>
+              JWT Decoder
+            </a>
+          </div>
+        </div>
+
+        <div>
+          <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 px-3 mb-1.5">Generators</p>
+          <div class="space-y-0.5">
+            <a href="#" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" data-tool="uuid">
+              <span class="w-6 h-6 flex items-center justify-center text-[11px] bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded font-bold">UID</span>
+              UUID
+            </a>
+            <a href="#" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" data-tool="hash">
+              <span class="w-6 h-6 flex items-center justify-center text-[11px] bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 rounded font-bold">##</span>
+              Hash
+            </a>
+          </div>
+        </div>
+
+        <div>
+          <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 px-3 mb-1.5">Converters</p>
+          <div class="space-y-0.5">
+            <a href="#" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" data-tool="timestamp">
+              <span class="w-6 h-6 flex items-center justify-center text-[11px] bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 rounded font-bold">ts</span>
+              Timestamp
+            </a>
+            <a href="#" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" data-tool="color">
+              <span class="w-6 h-6 flex items-center justify-center text-[13px] bg-pink-100 dark:bg-pink-900/40 rounded">🎨</span>
+              Color
+            </a>
+          </div>
+        </div>
+
+      </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 min-w-0 p-4 md:p-6 lg:p-8">
+
+      <!-- ===== JSON FORMATTER ===== -->
+      <section id="json" class="tool-section">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold mb-1">JSON Formatter &amp; Validator</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Format, minify, and validate JSON data</p>
+        </div>
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">Input</label>
+              <button class="text-xs text-slate-400 hover:text-red-500 transition-colors" onclick="jsonClear()">Clear</button>
+            </div>
+            <textarea id="json-input" rows="14" class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition" placeholder='{"name": "DevToolbox", "awesome": true}'></textarea>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="jsonFormat()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg font-medium transition-colors">Format</button>
+              <button onclick="jsonMinify()" class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white text-sm rounded-lg font-medium transition-colors">Minify</button>
+              <button onclick="jsonSample()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm rounded-lg font-medium transition-colors">Sample</button>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">Output</label>
+              <button id="json-copy-btn" class="copy-btn text-xs text-indigo-500 hover:text-indigo-700 font-semibold transition-colors" onclick="copyOutput('json-output', 'json-copy-btn')">Copy</button>
+            </div>
+            <textarea id="json-output" readonly rows="14" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-600 dark:text-slate-300 outline-none" placeholder="Formatted output will appear here..."></textarea>
+            <div id="json-error" class="hidden text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3"></div>
+            <div id="json-ok" class="hidden text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">✅ Valid JSON</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== BASE64 ===== -->
+      <section id="base64" class="tool-section">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold mb-1">Base64 Encoder / Decoder</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Encode text to Base64 or decode Base64 strings</p>
+        </div>
+        <div class="flex gap-2 mb-5">
+          <button id="b64-encode-tab" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium transition-colors" onclick="setB64Mode('encode')">Encode</button>
+          <button id="b64-decode-tab" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm rounded-lg font-medium transition-colors" onclick="setB64Mode('decode')">Decode</button>
+        </div>
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">Input</label>
+            <textarea id="b64-input" rows="10" class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition" placeholder="Enter text to encode..."></textarea>
+            <button onclick="b64Convert()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg font-medium transition-colors">Convert</button>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">Output</label>
+              <button id="b64-copy-btn" class="copy-btn text-xs text-indigo-500 hover:text-indigo-700 font-semibold transition-colors" onclick="copyOutput('b64-output', 'b64-copy-btn')">Copy</button>
+            </div>
+            <textarea id="b64-output" readonly rows="10" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-600 dark:text-slate-300 outline-none" placeholder="Output will appear here..."></textarea>
+            <div id="b64-error" class="hidden text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== URL ENCODER ===== -->
+      <section id="url" class="tool-section">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold mb-1">URL Encoder / Decoder</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Encode or decode URL components</p>
+        </div>
+        <div class="flex gap-2 mb-5">
+          <button id="url-encode-tab" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium" onclick="setUrlMode('encode')">Encode</button>
+          <button id="url-decode-tab" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm rounded-lg font-medium" onclick="setUrlMode('decode')">Decode</button>
+        </div>
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">Input</label>
+            <textarea id="url-input" rows="10" class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition" placeholder="Enter URL or text to encode..."></textarea>
+            <button onclick="urlConvert()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg font-medium transition-colors">Convert</button>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">Output</label>
+              <button id="url-copy-btn" class="copy-btn text-xs text-indigo-500 hover:text-indigo-700 font-semibold transition-colors" onclick="copyOutput('url-output', 'url-copy-btn')">Copy</button>
+            </div>
+            <textarea id="url-output" readonly rows="10" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-600 dark:text-slate-300 outline-none" placeholder="Output will appear here..."></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== JWT DECODER ===== -->
+      <section id="jwt" class="tool-section">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold mb-1">JWT Decoder</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Decode and inspect JSON Web Tokens — no data leaves your browser</p>
+        </div>
+        <div class="space-y-4">
+          <div class="space-y-2">
+            <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">JWT Token</label>
+            <textarea id="jwt-input" rows="4" class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition" placeholder="Paste JWT token here... (eyJhbGciOi...)"></textarea>
+            <div class="flex gap-2">
+              <button onclick="jwtDecode()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg font-medium transition-colors">Decode</button>
+              <button onclick="jwtSample()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm rounded-lg font-medium transition-colors">Sample</button>
+            </div>
+          </div>
+          <div id="jwt-error" class="hidden text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3"></div>
+          <div id="jwt-result" class="hidden space-y-4">
+            <div id="jwt-status" class="p-3 rounded-xl text-sm font-medium"></div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div class="space-y-1">
+                <div class="flex items-center justify-between">
+                  <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">Header</label>
+                  <button class="copy-btn text-xs text-indigo-500 font-semibold" onclick="copyText('jwt-header', this)">Copy</button>
+                </div>
+                <pre id="jwt-header" class="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-600 dark:text-slate-300 overflow-auto max-h-52 whitespace-pre-wrap"></pre>
+              </div>
+              <div class="space-y-1">
+                <div class="flex items-center justify-between">
+                  <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">Payload</label>
+                  <button class="copy-btn text-xs text-indigo-500 font-semibold" onclick="copyText('jwt-payload', this)">Copy</button>
+                </div>
+                <pre id="jwt-payload" class="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-600 dark:text-slate-300 overflow-auto max-h-52 whitespace-pre-wrap"></pre>
+              </div>
+            </div>
+            <div class="space-y-1">
+              <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">Signature (raw Base64url)</label>
+              <p id="jwt-signature" class="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono text-slate-500 break-all"></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== UUID GENERATOR ===== -->
+      <section id="uuid" class="tool-section">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold mb-1">UUID Generator</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Generate cryptographically random v4 UUIDs</p>
+        </div>
+        <div class="space-y-4">
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">Count</label>
+            <input type="number" id="uuid-count" value="5" min="1" max="100" class="w-24 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+            <button onclick="generateUUIDs()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg font-medium transition-colors">Generate</button>
+            <button id="uuid-copy-all-btn" class="copy-btn px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm rounded-lg font-medium transition-colors" onclick="uuidCopyAll()">Copy All</button>
+          </div>
+          <div id="uuid-list" class="space-y-1.5"></div>
+        </div>
+      </section>
+
+      <!-- ===== HASH GENERATOR ===== -->
+      <section id="hash" class="tool-section">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold mb-1">Hash Generator</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Generate SHA hashes from any text — updates live as you type</p>
+        </div>
+        <div class="space-y-4">
+          <div class="space-y-2">
+            <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">Input Text</label>
+            <textarea id="hash-input" rows="5" class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition" placeholder="Type or paste text to hash..." oninput="autoHash()"></textarea>
+          </div>
+          <div class="space-y-3">
+            <div class="p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">SHA-1</span>
+                <button class="copy-btn text-xs text-indigo-500 hover:text-indigo-700 font-semibold" onclick="copyText('hash-sha1', this)">Copy</button>
+              </div>
+              <code id="hash-sha1" class="text-xs text-slate-600 dark:text-slate-300 break-all">—</code>
+            </div>
+            <div class="p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">SHA-256</span>
+                <button class="copy-btn text-xs text-indigo-500 hover:text-indigo-700 font-semibold" onclick="copyText('hash-sha256', this)">Copy</button>
+              </div>
+              <code id="hash-sha256" class="text-xs text-slate-600 dark:text-slate-300 break-all">—</code>
+            </div>
+            <div class="p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">SHA-512</span>
+                <button class="copy-btn text-xs text-indigo-500 hover:text-indigo-700 font-semibold" onclick="copyText('hash-sha512', this)">Copy</button>
+              </div>
+              <code id="hash-sha512" class="text-xs text-slate-600 dark:text-slate-300 break-all">—</code>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== REGEX TESTER ===== -->
+      <section id="regex" class="tool-section">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold mb-1">Regex Tester</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Test regular expressions and highlight matches in real time</p>
+        </div>
+        <div class="space-y-4">
+          <div class="flex flex-col sm:flex-row gap-3">
+            <div class="flex-1 space-y-1">
+              <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">Pattern</label>
+              <div class="flex">
+                <span class="px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-r-0 border-slate-200 dark:border-slate-700 rounded-l-lg text-slate-400 text-sm">/</span>
+                <input id="regex-pattern" type="text" class="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition min-w-0" placeholder="[a-z]+" oninput="runRegex()">
+                <span class="px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-l-0 border-slate-200 dark:border-slate-700 rounded-r-lg text-slate-400 text-sm">/</span>
+              </div>
+            </div>
+            <div class="space-y-1">
+              <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">Flags</label>
+              <div class="flex gap-1.5">
+                <label class="flex items-center gap-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 select-none">
+                  <input type="checkbox" id="flag-g" checked onchange="runRegex()"> g
+                </label>
+                <label class="flex items-center gap-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 select-none">
+                  <input type="checkbox" id="flag-i" onchange="runRegex()"> i
+                </label>
+                <label class="flex items-center gap-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 select-none">
+                  <input type="checkbox" id="flag-m" onchange="runRegex()"> m
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-1">
+            <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">Test String</label>
+            <textarea id="regex-test" rows="5" class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition" placeholder="Enter text to test against..." oninput="runRegex()"></textarea>
+          </div>
+          <div id="regex-status" class="text-sm text-slate-500 min-h-[1.25rem]"></div>
+          <div class="space-y-1">
+            <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">Highlighted Matches</label>
+            <div id="regex-output" class="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm min-h-[5rem] text-slate-500 dark:text-slate-400 font-mono leading-relaxed whitespace-pre-wrap break-words">Enter a pattern and test string above...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== TIMESTAMP CONVERTER ===== -->
+      <section id="timestamp" class="tool-section">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold mb-1">Timestamp Converter</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Convert between Unix timestamps and human-readable dates</p>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="space-y-3 p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+            <h3 class="font-bold text-sm uppercase tracking-wider text-slate-500">Unix → Human Date</h3>
+            <div class="space-y-2">
+              <input id="ts-unix" type="number" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="e.g. 1704067200" oninput="unixToDate()">
+              <button onclick="tsNow()" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs rounded-lg font-medium transition-colors">Use Current Time</button>
+            </div>
+            <div id="ts-result" class="hidden space-y-2">
+              <div class="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                <span class="text-xs text-slate-500 font-medium">UTC</span>
+                <code id="ts-utc" class="text-xs font-mono text-slate-700 dark:text-slate-300"></code>
+              </div>
+              <div class="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                <span class="text-xs text-slate-500 font-medium">Local</span>
+                <code id="ts-local" class="text-xs font-mono text-slate-700 dark:text-slate-300"></code>
+              </div>
+              <div class="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                <span class="text-xs text-slate-500 font-medium">ISO 8601</span>
+                <div class="flex items-center gap-2">
+                  <code id="ts-iso" class="text-xs font-mono text-slate-700 dark:text-slate-300"></code>
+                  <button class="copy-btn text-xs text-indigo-500 font-semibold" onclick="copyText('ts-iso', this)">Copy</button>
+                </div>
+              </div>
+              <div class="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                <span class="text-xs text-slate-500 font-medium">Relative</span>
+                <code id="ts-relative" class="text-xs font-mono text-slate-700 dark:text-slate-300"></code>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-3 p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+            <h3 class="font-bold text-sm uppercase tracking-wider text-slate-500">Human Date → Unix</h3>
+            <input id="ts-date-input" type="datetime-local" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" oninput="dateToUnix()">
+            <div id="ts-unix-result" class="hidden space-y-2">
+              <div class="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                <span class="text-xs text-slate-500 font-medium">Unix (seconds)</span>
+                <div class="flex items-center gap-2">
+                  <code id="ts-unix-s" class="text-xs font-mono text-slate-700 dark:text-slate-300"></code>
+                  <button class="copy-btn text-xs text-indigo-500 font-semibold" onclick="copyText('ts-unix-s', this)">Copy</button>
+                </div>
+              </div>
+              <div class="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                <span class="text-xs text-slate-500 font-medium">Unix (milliseconds)</span>
+                <div class="flex items-center gap-2">
+                  <code id="ts-unix-ms" class="text-xs font-mono text-slate-700 dark:text-slate-300"></code>
+                  <button class="copy-btn text-xs text-indigo-500 font-semibold" onclick="copyText('ts-unix-ms', this)">Copy</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== COLOR CONVERTER ===== -->
+      <section id="color" class="tool-section">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold mb-1">Color Converter</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Convert between HEX, RGB, and HSL color formats</p>
+        </div>
+        <div class="space-y-6">
+          <div class="flex flex-col sm:flex-row items-start gap-5">
+            <div id="color-preview" class="w-24 h-24 rounded-2xl shadow-lg flex-shrink-0 border-4 border-white dark:border-slate-800" style="background:#6366f1"></div>
+            <div class="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+              <div class="space-y-1">
+                <label class="text-xs font-bold uppercase tracking-wider text-slate-500">HEX</label>
+                <input id="color-hex" type="text" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 outline-none" value="#6366f1" oninput="colorFromHex()">
+              </div>
+              <div class="space-y-1">
+                <label class="text-xs font-bold uppercase tracking-wider text-slate-500">RGB</label>
+                <input id="color-rgb" type="text" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="99, 102, 241" oninput="colorFromRgb()">
+              </div>
+              <div class="space-y-1">
+                <label class="text-xs font-bold uppercase tracking-wider text-slate-500">HSL</label>
+                <input id="color-hsl" type="text" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="239, 84%, 67%" oninput="colorFromHsl()">
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="text-sm font-semibold text-slate-600 dark:text-slate-400">Color Picker</label>
+            <input type="color" id="color-picker" value="#6366f1" class="w-10 h-10 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-700" oninput="colorFromPicker()">
+          </div>
+
+          <div class="p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-xs font-bold uppercase tracking-wider text-slate-400">CSS Variables</p>
+              <button class="copy-btn text-xs text-indigo-500 font-semibold" onclick="copyText('color-css-output', this)">Copy</button>
+            </div>
+            <code id="color-css-output" class="text-xs font-mono text-slate-600 dark:text-slate-300 whitespace-pre block"></code>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== LOREM IPSUM ===== -->
+      <section id="lorem" class="tool-section">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold mb-1">Lorem Ipsum Generator</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Generate placeholder text for designs and mockups</p>
+        </div>
+        <div class="space-y-4">
+          <div class="flex flex-wrap gap-3 items-end">
+            <div class="space-y-1">
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Type</label>
+              <select id="lorem-type" class="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                <option value="paragraphs">Paragraphs</option>
+                <option value="sentences">Sentences</option>
+                <option value="words">Words</option>
+              </select>
+            </div>
+            <div class="space-y-1">
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Count</label>
+              <input type="number" id="lorem-count" value="3" min="1" max="50" class="w-24 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+            </div>
+            <label class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 cursor-pointer">
+              <input type="checkbox" id="lorem-start" checked class="rounded"> Start with "Lorem ipsum..."
+            </label>
+            <button onclick="generateLorem()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg font-medium transition-colors">Generate</button>
+            <button id="lorem-copy-btn" class="copy-btn px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm rounded-lg font-medium transition-colors" onclick="copyOutput('lorem-output', 'lorem-copy-btn')">Copy</button>
+          </div>
+          <textarea id="lorem-output" readonly rows="12" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-600 dark:text-slate-300 outline-none leading-relaxed"></textarea>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
